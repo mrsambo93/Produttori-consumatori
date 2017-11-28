@@ -20,6 +20,7 @@ typedef struct buffer {
     int D;
     msg_t* buff;
     size_t len;
+    size_t maxsize;
 } buffer_t;
 
 /* allocazione / deallocazione buffer */
@@ -61,4 +62,12 @@ void* consumatore_bloccante(void* arg);
 void* produttore_non_bloccante(void* arg);
 
 void* consumatore_non_bloccante(void* arg);
+
+void* produttore_bloccante_ug(void* arg);
+
+void* consumatore_bloccante_ug(void* arg);
+
+void* produttore_non_bloccante_ug(void* arg);
+
+void* consumatore_non_bloccante_ug(void* arg);
 #endif

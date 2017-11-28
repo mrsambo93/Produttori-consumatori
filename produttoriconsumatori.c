@@ -8,6 +8,7 @@ pthread_mutex_t uso_d;
 pthread_cond_t non_pieno;
 pthread_cond_t non_vuoto;
 
+/*
 int main() {
 	srand(time(NULL));
 	buffer_t* buffer = buffer_init(N);
@@ -24,7 +25,6 @@ int main() {
 	pthread_join(prod2, NULL);
 	pthread_join(cons1, NULL);
 	pthread_join(cons2, NULL);
-	/*
 	msg_t* msg = msg_init("Ciao");
 	msg_t* msg_w = put_bloccante(buffer, msg);
 	msg_t* msg_r = get_bloccante(buffer);
@@ -33,15 +33,16 @@ int main() {
 	printf("Message read: %s\n", (char*) (msg_r->content));
 	printf("T = %d\n", *buffer->T);
 	buffer_destroy(buffer);
-	*/
 	return 0;
 }
-
+*/
 buffer_t* buffer_init(unsigned int maxsize) {
 	buffer_t* buffer = (buffer_t*) malloc(sizeof(buffer_t));
 	buffer->T = 0;
 	buffer->D = 0;
 	buffer->buff = (msg_t*) malloc(sizeof(msg_t) * maxsize);
+	buffer->len = 0;
+	buffer->maxsize = maxsize;
 	return buffer;  
 }
 
@@ -88,28 +89,25 @@ void random_string(char* result, size_t size) {
 
 void* produttore_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
-	int i = 4;
-	while(i-->0) {
+	while(1) {
 		char* content = malloc(N);
 		random_string(content,N);
 		msg_t* temp = msg_init(content);
-		msg_t* msg = put_bloccante(buffer, temp);
+		put_bloccante(buffer, temp);
 	}
 	return NULL;
 }
 
 void* consumatore_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
-	int i = 4;
-	while(i-->4) {
-		msg_t* msg = get_bloccante(buffer);
+	while(1) {
+		get_bloccante(buffer);
 	}
 	return NULL;
 }
 
 void* produttore_non_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
-	int i = 4;
 	while(1) {
 		char* content = malloc(N);
 		random_string(content,N);
@@ -125,7 +123,6 @@ void* produttore_non_bloccante(void* arg) {
 
 void* consumatore_non_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
-	int i = 4;
 	while(1) {
 		msg_t* msg = get_non_bloccante(buffer);
 		if(msg == BUFFER_ERROR) {
@@ -136,15 +133,31 @@ void* consumatore_non_bloccante(void* arg) {
 	return NULL;
 }
 
+void* produttore_bloccante_ug(void* arg) {
+	buffer_t* buffer = (buffer_t*) arg;
+	char* content = malloc(N);
+	random_string(content,N);
+	msg_t* temp = msg_init(content);
+	msg_t* msg = put_bloccante(buffer, temp);
+	pthread_exit(msg);
+}
+
+void* consumatore_bloccante_ug(void* arg) {
+	buffer_t* buffer = (buffer_t*) arg;
+	msg_t* msg = get_bloccante(buffer);
+	pthread_exit(msg);
+}
+
+
+
 msg_t* put_bloccante(buffer_t* buffer, msg_t* msg) {
 	pthread_mutex_lock(&uso_d);
-	while(buffer->len == N)
+	while(buffer->len == buffer->maxsize)
 		pthread_cond_wait(&non_pieno, &uso_d);
 	int D = buffer->D;
 	buffer->buff[D] = *msg;
 	buffer->D = (D + 1) % N;
 	++buffer->len;
-	printf("Produttore bloccante %d ha prodotto %s\n", (int) pthread_self(), (char*) msg->content);
 	pthread_cond_signal(&non_vuoto);
 	pthread_mutex_unlock(&uso_d);
 	return msg;
@@ -158,7 +171,6 @@ msg_t* get_bloccante(buffer_t* buffer) {
 	msg_t* msg = &buffer->buff[T];
 	buffer->T = (T + 1) % N;
 	--buffer->len;
-	printf("Consumatore bloccante %d ha letto %s\n", (int) pthread_self(), (char*) msg->content);
 	pthread_cond_signal(&non_pieno);
 	pthread_mutex_unlock(&uso_t);
 	return msg;
@@ -166,7 +178,7 @@ msg_t* get_bloccante(buffer_t* buffer) {
 
 msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg) {
 	pthread_mutex_lock(&uso_d);
-	if(buffer->len == N) {
+	if(buffer->len == buffer->maxsize) {
 		pthread_mutex_unlock(&uso_d);
 		return BUFFER_ERROR;
 	}

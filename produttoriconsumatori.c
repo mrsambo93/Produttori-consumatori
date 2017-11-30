@@ -194,13 +194,6 @@ msg_t* get_bloccante(buffer_t* buffer) {
 msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg) {
 	if(msg != NULL) {
 		pthread_mutex_lock(&uso_b);
-		/*struct timespec tempo = get_tempo_attuale();
-		while(buffer->len == buffer->maxsize) {
-			if(pthread_cond_timedwait(&non_pieno, &uso_b, &tempo) == ETIMEDOUT) {
-				printf("BUFFER_ERROR\n");
-				return BUFFER_ERROR;
-			}
-		}*/
 		if(buffer->len == buffer->maxsize) {
 			pthread_mutex_unlock(&uso_b);
 			return BUFFER_ERROR;
@@ -209,7 +202,6 @@ msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg) {
 		buffer->buff[D] = *msg;
 		buffer->D = (D + 1) % buffer->maxsize;
 		buffer->len += 1;
-		//pthread_cond_signal(&non_vuoto);
 		pthread_mutex_unlock(&uso_b);
 		return msg;
 	}
@@ -218,13 +210,6 @@ msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg) {
 
 msg_t* get_non_bloccante(buffer_t* buffer) {
 	pthread_mutex_lock(&uso_b);
-	/*struct timespec tempo = get_tempo_attuale();
-	while(buffer->len == 0) {
-		if(pthread_cond_timedwait(&non_vuoto, &uso_b, &tempo) == ETIMEDOUT) {
-			printf("BUFFER_ERROR\n");
-			return BUFFER_ERROR;
-		}
-	}*/
 	if(buffer->len == 0) {
 		pthread_mutex_unlock(&uso_b);
 		return BUFFER_ERROR;
@@ -233,7 +218,6 @@ msg_t* get_non_bloccante(buffer_t* buffer) {
 	msg_t* msg = msg_copy(&buffer->buff[T]);
 	buffer->T = (T + 1) % buffer->maxsize;
 	buffer->len -= 1;
-	//pthread_cond_signal(&non_pieno);
 	pthread_mutex_unlock(&uso_b);
 	return msg;
 }

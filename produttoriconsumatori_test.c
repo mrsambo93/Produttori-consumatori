@@ -237,7 +237,7 @@ void test_produttori_consumatori_buffer(void) {
 	} else {
 		CU_ASSERT(0);
 	}
-
+	
 	buffer_destroy(buffer);
 }
  

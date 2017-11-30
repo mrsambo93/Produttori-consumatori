@@ -85,15 +85,6 @@ void random_string(char* result, size_t size) {
     *result = '\0';
 }
 
-struct timespec get_tempo_attuale() {
-	struct timespec tempo;
-    struct timeval now;
-    gettimeofday(&now,NULL);
-    tempo.tv_sec = now.tv_sec;
-    tempo.tv_nsec = now.tv_usec*1000;
-    return tempo;
-}
-
 void* produttore_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	while(1) {

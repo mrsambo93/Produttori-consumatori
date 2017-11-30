@@ -7,6 +7,8 @@
 #include <malloc.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
+#include <errno.h>
 
 typedef struct msg {
  	void* content; // generico contenuto del messaggio
@@ -70,4 +72,6 @@ void* consumatore_bloccante_ug(void* arg);
 void* produttore_non_bloccante_ug(void* arg);
 
 void* consumatore_non_bloccante_ug(void* arg);
+
+struct timespec get_tempo_attuale();
 #endif

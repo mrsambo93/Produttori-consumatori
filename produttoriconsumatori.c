@@ -3,8 +3,7 @@
 #define N        4
 #define BUFFER_ERROR (msg_t *) NULL
 
-pthread_mutex_t uso_t;
-pthread_mutex_t uso_d;
+pthread_mutex_t uso_b;
 pthread_cond_t non_pieno;
 pthread_cond_t non_vuoto;
 
@@ -70,8 +69,7 @@ msg_t* msg_copy(msg_t* msg) {
 }
 
 void cond_init() {
-	pthread_mutex_init(&uso_t, NULL);
-	pthread_mutex_init(&uso_d, NULL);
+	pthread_mutex_init(&uso_b, NULL);
 	pthread_cond_init(&non_pieno, NULL);
 	pthread_cond_init(&non_vuoto, NULL);
 }
@@ -157,60 +155,73 @@ void* consumatore_non_bloccante_ug(void* arg) {
 
 msg_t* put_bloccante(buffer_t* buffer, msg_t* msg) {
 	if(msg != NULL) {
-		pthread_mutex_lock(&uso_d);
+		pthread_mutex_lock(&uso_b);
 		while(buffer->len == buffer->maxsize)
-			pthread_cond_wait(&non_pieno, &uso_d);
+			pthread_cond_wait(&non_pieno, &uso_b);
 		int D = buffer->D;
 		buffer->buff[D] = *msg;
 		buffer->D = (D + 1) % N;
 		++buffer->len;
 		pthread_cond_signal(&non_vuoto);
-		pthread_mutex_unlock(&uso_d);
+		pthread_mutex_unlock(&uso_b);
 		return msg;
 	}
 	return NULL;
 }
 
 msg_t* get_bloccante(buffer_t* buffer) {
-	pthread_mutex_lock(&uso_t);
+	pthread_mutex_lock(&uso_b);
 	while(buffer->len == 0)
-		pthread_cond_wait(&non_vuoto, &uso_t);
+		pthread_cond_wait(&non_vuoto, &uso_b);
 	int T = buffer->T;
 	msg_t* msg = &buffer->buff[T];
 	buffer->T = (T + 1) % N;
 	--buffer->len;
 	pthread_cond_signal(&non_pieno);
-	pthread_mutex_unlock(&uso_t);
+	pthread_mutex_unlock(&uso_b);
 	return msg;
 }
 
 msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg) {
 	if(msg != NULL) {
-		pthread_mutex_lock(&uso_d);
-		if(buffer->len == buffer->maxsize) {
-			pthread_mutex_unlock(&uso_d);
-			return BUFFER_ERROR;
+		struct timespec tempo = get_tempo_attuale();
+		pthread_mutex_lock(&uso_b);
+		while(buffer->len == buffer->maxsize) {
+			if(pthread_cond_timedwait(&non_pieno, &uso_b, &tempo) == ETIMEDOUT)
+				return BUFFER_ERROR;
 		}
 		int D = buffer->D;
 		buffer->buff[D] = *msg;
 		buffer->D = (D + 1) % N;
 		++buffer->len;
-		pthread_mutex_unlock(&uso_d);
+		pthread_cond_signal(&non_vuoto);
+		pthread_mutex_unlock(&uso_b);
 		return msg;
 	}
 	return NULL;
 }
 
 msg_t* get_non_bloccante(buffer_t* buffer) {
-	pthread_mutex_lock(&uso_t);
-	if(buffer->len == 0) {
-		pthread_mutex_unlock(&uso_t);
-		return BUFFER_ERROR;
+	struct timespec tempo = get_tempo_attuale();
+	pthread_mutex_lock(&uso_b);
+	while(buffer->len == 0) {
+		if(pthread_cond_timedwait(&non_vuoto, &uso_b, &tempo) == ETIMEDOUT)
+			return BUFFER_ERROR;
 	}
 	int T = buffer->T;
 	msg_t* msg = &buffer->buff[T];
 	buffer->T = (T + 1) % N;
 	--buffer->len;
-	pthread_mutex_unlock(&uso_t);
+	pthread_cond_signal(&non_pieno);
+	pthread_mutex_unlock(&uso_b);
 	return msg;
+}
+
+struct timespec get_tempo_attuale() {
+	struct timespec tempo;
+    struct timeval now;
+    gettimeofday(&now,NULL);
+    tempo.tv_sec = now.tv_sec;
+    tempo.tv_nsec = now.tv_usec*1000;
+    return tempo;
 }

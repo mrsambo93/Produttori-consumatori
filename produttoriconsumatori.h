@@ -16,19 +16,16 @@ typedef struct msg {
 } msg_t;
 
 typedef struct buffer {
-    int T;
-    int D;
-    msg_t* buff;
-    size_t len;
-    size_t maxsize;
+    int T; //indice di lettura
+    int D; //indice di scrittura
+    msg_t* buff; //buffer dei messaggi 
+    size_t len; //numero di celle del buffer attualmente occupate
+    size_t maxsize; //numero totale delle celle
 } buffer_t;
 
-/* allocazione / deallocazione buffer */
-// creazione di un buffer vuoto di dim. max nota
 buffer_t* buffer_init(unsigned int maxsize);
-// deallocazione di un buffer
+
 void buffer_destroy(buffer_t* buffer);
-/* operazioni sul buffer */
 
 msg_t* msg_init(void* content);
 
@@ -38,19 +35,12 @@ msg_t* msg_copy(msg_t* msg);
 
 void cond_init();
 
-// inserimento bloccante: sospende se pieno, quindi
-// effettua l’inserimento non appena si libera dello spazio
-// restituisce il messaggio inserito; N.B.: msg!=null
 msg_t* put_bloccante(buffer_t* buffer, msg_t* msg);
-// inserimento non bloccante: restituisce BUFFER_ERROR se pieno,
-// altrimenti effettua l’inserimento e restituisce il messaggio
-// inserito; N.B.: msg!=null
+
 msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg);
-// estrazione bloccante: sospende se vuoto, quindi
-// restituisce il valore estratto non appena disponibile
+
 msg_t* get_bloccante(buffer_t* buffer);
-// estrazione non bloccante: restituisce BUFFER_ERROR se vuoto
-// ed il valore estratto in caso contrario
+
 msg_t* get_non_bloccante(buffer_t* buffer);
 
 void random_string(char*, size_t);

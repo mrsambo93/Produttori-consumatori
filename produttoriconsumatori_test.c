@@ -258,10 +258,10 @@ int main() {
    		|| NULL == CU_add_test(pSuite, "test di 1 consumatore bloccante con buffer vuoto", test_consumazione_bloccante_buffer_vuoto)
    		|| NULL == CU_add_test(pSuite, "test di 1 produttore e 1 consumatore su buffer unitario, prima il consumatore", test_cons_prod_buffer_unitario)
    		|| NULL == CU_add_test(pSuite, "test di 1 produttore e 1 consumatore su buffer unitario, prima il produttore", test_prod_cons_buffer_unitario)
-   		|| NULL == CU_add_test(pSuite, "test 2 produttori su buffer unitario", test_produttori_buffer_unitario)
-   		|| NULL == CU_add_test(pSuite, "test 2 consumatori su buffer unitario", test_consumatori_buffer_unitario)
-   		|| NULL == CU_add_test(pSuite, "test 2 produttori 2 consumatori su buffer unitario", test_produttori_consumatori_buffer_unitario)
-   		|| NULL == CU_add_test(pSuite, "test 2 produttori 2 consumatori su buffer generico", test_produttori_consumatori_buffer)) {
+   		|| NULL == CU_add_test(pSuite, "test 2 produttori non bloccanti su buffer unitario", test_produttori_buffer_unitario)
+   		|| NULL == CU_add_test(pSuite, "test 2 consumatori non bloccanti su buffer unitario", test_consumatori_buffer_unitario)
+   		|| NULL == CU_add_test(pSuite, "test 2 produttori 2 consumatori bloccanti su buffer unitario", test_produttori_consumatori_buffer_unitario)
+   		|| NULL == CU_add_test(pSuite, "test 2 produttori 2 consumatori non bloccanti su buffer generico", test_produttori_consumatori_buffer)) {
  		CU_cleanup_registry();
  		return CU_get_error();
  	}

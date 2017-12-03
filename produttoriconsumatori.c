@@ -7,6 +7,7 @@ pthread_mutex_t uso_b;
 pthread_cond_t non_pieno;
 pthread_cond_t non_vuoto;
 
+//main non utilizzato
 /*
 int main() {
 	srand(time(NULL));
@@ -35,6 +36,7 @@ int main() {
 	return 0;
 }*/
 
+// creazione di un buffer vuoto di dim. max nota
 buffer_t* buffer_init(unsigned int maxsize) {
 	buffer_t* buffer = (buffer_t*) malloc(sizeof(buffer_t));
 	buffer->T = 0;
@@ -45,11 +47,13 @@ buffer_t* buffer_init(unsigned int maxsize) {
 	return buffer;  
 }
 
+// deallocazione di un buffer
 void buffer_destroy(buffer_t* buffer) {
 	free(buffer->buff);
 	free(buffer);
 }
 
+//creazione di un messaggio con contenuto content generico
 msg_t* msg_init(void* content) {
 	msg_t* new_msg = (msg_t*) malloc(sizeof(msg_t));
 	new_msg->content = content;
@@ -59,21 +63,26 @@ msg_t* msg_init(void* content) {
 	return new_msg;
 }
 
+//deallocazione di un messaggio
 void msg_destroy(msg_t* msg) {
 	free(msg->content);
 	free(msg);
 }
 
+//funzione che crea una copia del messaggio
 msg_t* msg_copy(msg_t* msg) {
 	return msg->msg_init(msg->content);
 }
 
+//inizializzazione di mutex e cndizioni
 void cond_init() {
 	pthread_mutex_init(&uso_b, NULL);
 	pthread_cond_init(&non_pieno, NULL);
 	pthread_cond_init(&non_vuoto, NULL);
 }
 
+//funzine che scrive in result una stringa di caratteri
+//random di lunghezza size
 void random_string(char* result, size_t size) {
 	char charset[] = "0123456789"
                      "abcdefghijklmnopqrstuvwxyz"
@@ -85,6 +94,8 @@ void random_string(char* result, size_t size) {
     *result = '\0';
 }
 
+//generico produttore che crea stringhe randomiche
+//e effettua inserimenti bloccanti 
 void* produttore_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	while(1) {
@@ -96,6 +107,7 @@ void* produttore_bloccante(void* arg) {
 	return NULL;
 }
 
+//generico consumatore che effettua estrazioni bloccanti 
 void* consumatore_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	while(1) {
@@ -104,6 +116,8 @@ void* consumatore_bloccante(void* arg) {
 	return NULL;
 }
 
+//generico produttore che crea stringhe randomiche
+//e effettua inserimenti non bloccanti
 void* produttore_non_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	while(1) {
@@ -115,6 +129,7 @@ void* produttore_non_bloccante(void* arg) {
 	return NULL;
 }
 
+//generico consumatore che effettua estrazioni non bloccanti
 void* consumatore_non_bloccante(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	while(1) {
@@ -123,6 +138,8 @@ void* consumatore_non_bloccante(void* arg) {
 	return NULL;
 }
 
+//versione usa e getta del produttore bloccante (solo a scopo di test)
+//ritorna il messaggio inserito
 void* produttore_bloccante_ug(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	char* content = malloc(N);
@@ -132,12 +149,16 @@ void* produttore_bloccante_ug(void* arg) {
 	pthread_exit(msg);
 }
 
+//ersione usa e getta del consumatore bloccante (solo a scopo di test)
+//ritorna il messaggio letto
 void* consumatore_bloccante_ug(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	msg_t* msg = get_bloccante(buffer);
 	pthread_exit(msg);
 }
 
+//ersione usa e getta del produttore non bloccante (solo a scopo di test)
+//ritorna il messaggio scritto o BUFFER_ERROR altrimenti
 void* produttore_non_bloccante_ug(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	char* content = malloc(N);
@@ -147,12 +168,17 @@ void* produttore_non_bloccante_ug(void* arg) {
 	pthread_exit(msg);
 }
 
+//ersione usa e getta del consumatore non bloccante (solo a scopo di test)
+//ritorna il messaggio letto o BUFFER_ERROR altrimenti
 void* consumatore_non_bloccante_ug(void* arg) {
 	buffer_t* buffer = (buffer_t*) arg;
 	msg_t* msg = get_non_bloccante(buffer);
 	pthread_exit(msg);
 }
 
+// inserimento bloccante: sospende se pieno, quindi
+// effettua l’inserimento non appena si libera dello spazio
+// restituisce il messaggio inserito; N.B.: msg!=null
 msg_t* put_bloccante(buffer_t* buffer, msg_t* msg) {
 	if(msg != NULL) {
 		pthread_mutex_lock(&uso_b);
@@ -169,6 +195,8 @@ msg_t* put_bloccante(buffer_t* buffer, msg_t* msg) {
 	return NULL;
 }
 
+// estrazione bloccante: sospende se vuoto, quindi
+// restituisce il valore estratto non appena disponibile
 msg_t* get_bloccante(buffer_t* buffer) {
 	pthread_mutex_lock(&uso_b);
 	while(buffer->len == 0)
@@ -182,6 +210,9 @@ msg_t* get_bloccante(buffer_t* buffer) {
 	return msg;
 }
 
+// inserimento non bloccante: restituisce BUFFER_ERROR se pieno,
+// altrimenti effettua l’inserimento e restituisce il messaggio
+// inserito; N.B.: msg!=null
 msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg) {
 	if(msg != NULL) {
 		pthread_mutex_lock(&uso_b);
@@ -199,6 +230,8 @@ msg_t* put_non_bloccante(buffer_t* buffer, msg_t* msg) {
 	return NULL;
 }
 
+// estrazione non bloccante: restituisce BUFFER_ERROR se vuoto
+// ed il valore estratto in caso contrario
 msg_t* get_non_bloccante(buffer_t* buffer) {
 	pthread_mutex_lock(&uso_b);
 	if(buffer->len == 0) {

@@ -202,10 +202,10 @@ void test_produttori_consumatori_buffer(void) {
 	pthread_t prod2;
 	pthread_t cons1;
 	pthread_t cons2;
-	pthread_create(&prod1, NULL, produttore_non_bloccante_ug, (void*) buffer);
-	pthread_create(&prod2, NULL, produttore_non_bloccante_ug, (void*) buffer);
-	pthread_create(&cons1, NULL, consumatore_non_bloccante_ug, (void*) buffer);	
-	pthread_create(&cons2, NULL, consumatore_non_bloccante_ug, (void*) buffer);
+	pthread_create(&prod1, NULL, produttore_bloccante_ug, (void*) buffer);
+	pthread_create(&prod2, NULL, produttore_bloccante_ug, (void*) buffer);
+	pthread_create(&cons1, NULL, consumatore_bloccante_ug, (void*) buffer);	
+	pthread_create(&cons2, NULL, consumatore_bloccante_ug, (void*) buffer);
 	void* scritto1;
 	void* scritto2;
 	void* letto1;
@@ -219,10 +219,11 @@ void test_produttori_consumatori_buffer(void) {
 	msg_t* msg_c1 = (msg_t*) letto1;
 	msg_t* msg_c2 = (msg_t*) letto2;
 
-	CU_ASSERT_PTR_NOT_EQUAL(msg_p1, BUFFER_ERROR);
-	CU_ASSERT_PTR_NOT_EQUAL(msg_p2, BUFFER_ERROR);
-	CU_ASSERT_PTR_NOT_EQUAL(msg_c1, BUFFER_ERROR);
-	CU_ASSERT_PTR_NOT_EQUAL(msg_c2, BUFFER_ERROR);
+
+	CU_ASSERT_PTR_NOT_NULL(msg_p1);
+	CU_ASSERT_PTR_NOT_NULL(msg_p2);
+	CU_ASSERT_PTR_NOT_NULL(msg_c1);
+	CU_ASSERT_PTR_NOT_NULL(msg_c2);
 
 	char* content_s1 = msg_p1->content;
 	char* content_s2 = msg_p2->content;
@@ -237,7 +238,7 @@ void test_produttori_consumatori_buffer(void) {
 	} else {
 		CU_ASSERT(0);
 	}
-	
+
 	buffer_destroy(buffer);
 }
  
@@ -261,7 +262,7 @@ int main() {
    		|| NULL == CU_add_test(pSuite, "test 2 produttori non bloccanti su buffer unitario", test_produttori_buffer_unitario)
    		|| NULL == CU_add_test(pSuite, "test 2 consumatori non bloccanti su buffer unitario", test_consumatori_buffer_unitario)
    		|| NULL == CU_add_test(pSuite, "test 2 produttori 2 consumatori bloccanti su buffer unitario", test_produttori_consumatori_buffer_unitario)
-   		|| NULL == CU_add_test(pSuite, "test 2 produttori 2 consumatori non bloccanti su buffer generico", test_produttori_consumatori_buffer)) {
+   		|| NULL == CU_add_test(pSuite, "test 2 produttori 2 consumatori bloccanti su buffer generico", test_produttori_consumatori_buffer)) {
  		CU_cleanup_registry();
  		return CU_get_error();
  	}
